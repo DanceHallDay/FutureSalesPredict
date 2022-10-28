@@ -1,4 +1,4 @@
-from unittest import result
+
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -6,23 +6,24 @@ from IDataset import IDataset
 import re
 from memory_reducer import reduce_memory_usage
 from itertools import product
+from typing import List
 
 class Dataset(IDataset):
-    def __init__(self, csv_path:str, description_files_path:str, train:bool = False, *args, **kwargs) -> None:
+    def __init__(self, csv_path:str, description_files_path:str, train:bool=False) -> None:
         self.train = train
         self.df = self.__etl__(csv_path)
         super().__init__()
 
-    def get_data(self, add_cat_preprocessing : bool = True, add_lag_features : bool = False, *args, **kwargs):
+    def get_data(self, add_cat_preprocessing:bool=True, add_lag_features:bool=False, *args, **kwargs) -> pd.DataFrame:
         result_df =  self.df.drop(['item_cnt_month', 'item_price', 'item_revenue'], axis=1) if self.train else self.df
         result_df = self.__cat_features_preprocessing__(result_df) if add_cat_preprocessing else result_df
         result_df = self.__add_lag_features__(result_df, *args, **kwargs) if add_lag_features else result_df
         return result_df
 
-    def get_labels(self):
+    def get_labels(self) -> pd.Series:
         return self.df.item_cnt_month if self.train else None
 
-    def __name_preprocessing__(self, name):
+    def __name_preprocessing__(self, name : str) -> str:
         name = name.lower()
         #delete addition information(name of street)
         name = name.partition('(')[0]
@@ -32,7 +33,7 @@ class Dataset(IDataset):
         
         return name    
 
-    def __fix_category__(self, category_id):
+    def __fix_category__(self, category_id:int) -> str:
         if category_id == 0:
             return "Headphones"
         elif category_id in range(1, 8):
@@ -64,7 +65,7 @@ class Dataset(IDataset):
         else:
             return 'Charging'
     
-    def __cat_features_preprocessing__(self, df):
+    def __cat_features_preprocessing__(self, df:pd.DataFrame) -> pd.DataFrame:
 
         df['shop_name'] = df['shop_name'].apply(self.__name_preprocessing__)
         df['shop_city'] = df['shop_name'].apply(lambda x : x.split(' ')[0])
@@ -100,8 +101,8 @@ class Dataset(IDataset):
         return df
 
 
-    def __add_lag_features__(df, other_df, lags, lag_features):
-        result_df = pd.concat([self.df, *other_df])
+    def __add_lag_features__(df:pd.DataFrame, other_df:List[pd.DataFrame], lags:list, lag_features:list) -> pd.DataFrame:
+        result_df = pd.concat([df, *other_df])
         
         lag_features = ['item_revenue', 'item_price', 'item_cnt_month']
         for lag in lags:
@@ -127,7 +128,7 @@ class Dataset(IDataset):
         return result_df
 
 
-    def __drop_outliers__(df, cat):
+    def __drop_outliers__(df:pd.DataFrame, cat:str) -> pd.DataFrame:
         cat_df = df[df['item_category_id'] == cat]
         cat_df_mean, cat_df_std = cat_df.mean(), cat_df.std()
         cat_df_norm = (cat_df - cat_df_mean) / cat_df_std
