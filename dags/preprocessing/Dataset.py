@@ -9,9 +9,10 @@ from itertools import product
 from typing import List
 
 class Dataset(IDataset):
-    def __init__(self, csv_path:str, description_files_path:str, train:bool=False) -> None:
+    def __init__(self, csv_path:str, description_files_path:str, train:bool=False, *args, **kwargs) -> None:
         self.train = train
-        self.df = self.__etl__(csv_path)
+        self.description_files_path = description_files_path
+        self.df = self.__etl__(csv_path, *args, **kwargs)
         super().__init__()
 
     def get_data(self, add_cat_preprocessing:bool=True, add_lag_features:bool=False, *args, **kwargs) -> pd.DataFrame:
@@ -96,7 +97,7 @@ class Dataset(IDataset):
             .str.split(' - ').apply(lambda x: x[-1])
         )
 
-        df['item_fixed_category'] = df['item_category_id'].apply(self.fix_category)
+        df['item_fixed_category'] = df['item_category_id'].apply(self.__fix_category__)
         
         return df
 
@@ -140,10 +141,10 @@ class Dataset(IDataset):
     def __etl__(self, file_path : str, add_item_cartesian_product : bool = False) -> pd.DataFrame:
         dataset = pd.read_csv(file_path)
         if self.train:
-            dataset['item_revenue'] = train_dataset['item_price'] * train_dataset['item_cnt_day']
-        shops = pd.read_csv(self.description_files_path)
-        items = pd.read_csv(self.description_files_path)
-        item_cat = pd.read_csv(self.description_files_path)
+            dataset['item_revenue'] = dataset['item_price'] * dataset['item_cnt_day']
+        shops = pd.read_csv(self.description_files_path + 'shops.csv')
+        items = pd.read_csv(self.description_files_path + 'items.csv')
+        item_cat = pd.read_csv(self.description_files_path + 'item_categories.csv')
         
         
         if add_item_cartesian_product and self.train:
@@ -179,7 +180,7 @@ class Dataset(IDataset):
                 .rename(columns = {'item_cnt_day' : 'item_cnt_month'})
             )
 
-            train_dataset = pd.merge(grid,train_dataset,how='left',on=['shop_id', 'item_id', 'date_block_num']).fillna(0)
+            dataset = pd.merge(grid, dataset, how='left', on=['shop_id', 'item_id', 'date_block_num']).fillna(0)
         
         reduce_memory_usage(dataset)
         
@@ -191,7 +192,8 @@ class Dataset(IDataset):
         #train_dataset.drop(['date'], axis=1, inplace=True)
         
         #delete neg values in item_price feature
-        dataset = dataset[train_dataset['item_price'] >= 0]
+        if self.train:
+            dataset = dataset[dataset['item_price'] >= 0]
         #train_dataset.loc[train_dataset['item_price'] > 0, 'item_price'].apply(np.log)
         reduce_memory_usage(dataset)
         
