@@ -1,20 +1,16 @@
 from preprocessing.IDataset import IDataset
-from preprocessing.sliding_window_cv import SlidingWindowSplitCVpwd
+from dags.preprocessing.SlidingWIndowCV import SlidingWindowSplitCV
 from sklearn.metrics import (
     mean_absolute_error,
      mean_squared_error
 )
 import numpy as np
 import pandas as pd
-import lightgbm as lbg
+import lightgbm as lgb
 import gc
 
 
-def train_lgb(
-    train_data : IDataset,
-    test_data : IDataset,
-    cv : SlidingWindowSplitCV,
-):
+def train_lgb(train_data:IDataset, test_data:IDataset, cv:SlidingWindowSplitCV,):
     models = []
     X_train = train_data.get_data()
     y_train = train_data.get_labels()

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def reduce_memory_usage(df, verbose=True):
+def reduce_memory_usage(df:pd.DataFrame, verbose:int=True):
     numeric_types = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     curr_memory_usage = df.memory_usage().sum() / 1024**2 
     
