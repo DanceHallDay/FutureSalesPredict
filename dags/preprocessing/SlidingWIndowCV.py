@@ -4,12 +4,19 @@ import pandas as pd
 
 class SlidingWindowSplitCV:
     #TODO add docstring
-    """"""
+    """Parameters
+    -
+     - train_size - number of months
+
+     - test_size - number of months
+    """
     def __init__(self, train_size: int, test_size: int):
+
         self.train_size = train_size
         self.test_size = test_size
 
     def split(self, df: pd.DataFrame, split_column: str):
+
         df = df.sort_values(by=split_column).reset_index()
         border_indexes = df.loc[df[split_column] !=
                                 df[split_column].shift()].index.tolist()
