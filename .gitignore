@@ -133,3 +133,4 @@ dmypy.json
 # ignores for vscode staff
 .DS_Store
 .vscode
+catboost_info
