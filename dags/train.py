@@ -59,9 +59,12 @@ def train(train_data: Dataset, cv: SlidingWindowSplitCV,):
             }
 
 
-        curr_model = CatBoostRegressor(early_stopping_rounds=5,
-                                       depth=5,
-                                       learning_rate=0.5)
+        curr_model = CatBoostRegressor(
+            early_stopping_rounds=5,
+            depth=5,
+            learning_rate=0.5,
+            task_type='GPU' #TODO change to train locally
+        )
         curr_model.fit(train_dataset, eval_set=valid_dataset)
 
         models.append(curr_model)
