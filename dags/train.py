@@ -40,7 +40,7 @@ def train(train_data: Dataset, cv: SlidingWindowSplitCV,):
             'learning_rate': 0.07,
             'verbose': True,
             'early_stopping_rounds': 10,
-            'task_type': 'CPU'
+            'task_type': 'GPU'
             }
 
     run['parameters'].log(str(param))
