@@ -12,10 +12,10 @@ import gc
 
 
 
-run = neptune.init_run(
-    project="lev.taborov/FutureSalesPredict",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJkNTQ5YzlhNS03NDNiLTRjYmItYmQ5Ni1lMWViOTViNjllNmIifQ==",
-)  # your credentials
+# run = neptune.init_run(
+#     project="lev.taborov/FutureSalesPredict",
+#     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiJkNTQ5YzlhNS03NDNiLTRjYmItYmQ5Ni1lMWViOTViNjllNmIifQ==",
+# )  # your credentials
 
 
 
@@ -23,12 +23,12 @@ run = neptune.init_run(
 def train(train_data: Dataset, cv: SlidingWindowSplitCV,):
 
 
-    X_train = train_data.get_data().drop(columns='item_cnt_day')
+    X_train = train_data.get_data()
     y_train = train_data.get_labels()
 
-    run['train/used_columns'].log(
-        X_train.columns
-    )
+    # run['train/used_columns'].log(
+    #     X_train.columns
+    # )
 
     train_predict = 0
 
@@ -40,10 +40,10 @@ def train(train_data: Dataset, cv: SlidingWindowSplitCV,):
             'learning_rate': 0.07,
             'verbose': True,
             'early_stopping_rounds': 10,
-            'task_type': 'GPU'
+            'task_type': 'CPU'
             }
 
-    run['parameters'].log(str(param))
+    # run['parameters'].log(str(param))
 
 
     model = CatBoostRegressor(**param)
@@ -107,7 +107,7 @@ def train(train_data: Dataset, cv: SlidingWindowSplitCV,):
 
         mse = mean_squared_error(curr_y_valid, train_predict)
         # mae = mean_absolute_error(y_train, train_predict)
-        run['train/mse'].log(mse)
+        # run['train/mse'].log(mse)
 
 
         # run['feature_importance'].log(

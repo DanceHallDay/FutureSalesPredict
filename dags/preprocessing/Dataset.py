@@ -30,18 +30,30 @@ class Dataset:
         self.items = pd.read_csv(self.file_path + '/items.csv')
         self.item_categories = pd.read_csv(self.file_path + '/item_categories.csv')
         self.shops = pd.read_csv(self.file_path + '/shops.csv')
+        self.test = pd.read_csv(self.file_path + '/test.csv')
 
 
 
     def __etl__(self) -> None:
 
-        dataset = self.df
 
         # fixing data problems from DQC
         # 1. drop outliers
         if self.train:
             self.__drop_outliers__()
 
+
+        self.df = self.df.groupby(
+            ['date_block_num',
+             'shop_id',
+             'item_id'
+        ]).agg({
+            'item_cnt_day' : 'sum',
+            'item_price' : 'mean',
+            # 'item_revenue' : 'sum'
+        }).reset_index().rename(
+            columns = {'item_cnt_day' : 'item_cnt_month'}
+        )
 
         # 2. numerical data transform
         # TODO figure out data transformation
@@ -52,11 +64,15 @@ class Dataset:
 
         self.__cat_features_preprocessing__()
 
-        self.df = self.df
+        # 4. add lag feature
+        self.__add_lag_features__([1,2])
+        # reduce_memory_usage(dataset)
+
+        # 5. merge all together
         self.df = pd.merge(self.df, self.items, on="item_id")
         self.df = pd.merge(self.df, self.shops, on="shop_id", how="left")
         self.df = pd.merge(self.df, self.item_categories, on="item_category_id", how="left")
-        self.df.drop_duplicates()
+        # self.df.drop_duplicates()
 
         if not self.train:
             self.df['date_block_num'] = 34
@@ -74,15 +90,12 @@ class Dataset:
             # 'item_category_name',
             'item_category',
             'item_subcategory',
-            'item_fixed_category'
+            'item_fixed_category',
+            'item_cnt_month'
         ]
         # dataset without price
-        if self.train:
-            columns.append('item_cnt_day')
-            self.df = self.df[columns]
-            self.df['item_cnt_day'].apply(np.log10)
-        else:
-            self.df = self.df[columns]
+        self.df = self.df
+        # self.df['item_cnt_day'].apply(np.log10)
 
         reduce_memory_usage(self.df)
 
@@ -196,12 +209,12 @@ class Dataset:
 
 
 
-    def __add_lag_features__(self, df: pd.DataFrame, other_df: List[pd.DataFrame], lags: list, lag_features: list) -> pd.DataFrame:
-        result_df = pd.concat([df, *other_df])
+    def __add_lag_features__(self, lags: list, lag_features: list = ['item_cnt_month', 'item_price']) -> None:
+        result_df = self.df
 
-        lag_features = ['item_revenue', 'item_price', 'item_cnt_month']
+
         for lag in lags:
-                df_lag = result_df[lag_features + ['date_block_num', 'item_id', 'shop_id']].copy()
+                df_lag = result_df[(lag_features + ['date_block_num', 'item_id', 'shop_id'])].copy()
                 df_lag = df_lag.rename(
                     columns={
                         feature : feature + f'_lag_{lag}'
@@ -211,13 +224,12 @@ class Dataset:
 
                 df_lag['date_block_num'] += lag
 
-                result_df = pd.merge(
-                    result_df,
+                result_df = result_df.merge(
                     df_lag,
-                    on=['item_id', 'shop_id', 'date_block_num'],
+                    on=['date_block_num', 'item_id', 'shop_id'],
                     how='left'
                 )
 
 
-        return result_df
+        self.df = result_df
 
